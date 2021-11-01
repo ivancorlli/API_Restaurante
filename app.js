@@ -14,4 +14,8 @@ app.get('/',(req,res)=>{
     return res.send('Server WORKS')
 })
 
+// app.use('/api',[
+
+// ])
+
 module.exports =  app
