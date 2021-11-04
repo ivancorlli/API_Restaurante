@@ -1,5 +1,5 @@
 const { encriptar } = require("../helpers/bcryptHelp");
-const User = require("../models/userSchema");
+const User = require('../schema/user')
 
 async function createUser(req, res) {
   const body = req.body;
@@ -41,7 +41,7 @@ async function getUsers(req, res) {
   if (!page) page = 1;
   if (!limit) limit = 10;
   try {
-    const count = await User.countDocuemnts();
+    const count = await User.countDocuments();
     const users = await User
       .find({})
       .skip((page - 1) * 10)
@@ -49,9 +49,9 @@ async function getUsers(req, res) {
     let result = {
       totalPages: Math.ceil(count / limit),
       page: page,
-      users,
+      size: limit,
     };
-    if (page > 0) {
+    if (page > 1) {
       result.previous = page - 1;
     }
     if (limit < count) {
@@ -59,7 +59,7 @@ async function getUsers(req, res) {
     }
     return res
       .status(200)
-      .send({ ok: true, msg: "Usuarios obtenidos con exito", result });
+      .send({ ok: true, msg: "Usuarios obtenidos con exito",result,users });
   } catch (err) {
     return res
       .status(500)
@@ -71,7 +71,18 @@ async function getUsers(req, res) {
   }
 }
 
-function getUser(req, res) {}
+async function getUser(req, res) {
+  let id = req.params.id;
+  if(!id) return res.status(400).send({ok:false, msg:'Es necesario enviar un id'})
+
+  try{
+    let user = await User.findById(id);
+    return res.status(200).send({ok:true,msg:'Usuario encontrado con exito',user});
+  }catch(err){
+    if(err.name === 'CastError') return res.status(500).send({ok:false, msg:'No existe un usario con este id'})
+    return res.status(500).send({ok:false, msg:'Error al obtener usuario',err})
+  }
+}
 
 module.exports = {
   createUser,
