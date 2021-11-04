@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+const Roles =[
+    'USER_ROLE',
+    'ADMIN_ROLE',
+    'EMPLOYEE_ROLE',
+]
+
 
 const UserSchema = new Schema({
     email: { type: String, required: true, unique: true },
