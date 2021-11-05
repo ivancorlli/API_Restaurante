@@ -31,16 +31,25 @@ async function createUser(req, res) {
     }
     return res
       .status(500)
-      .send({ ok: false, msg: "Error al intentar crear el usuario" });
+      .send({ ok: false, msg: "Error al intentar crear el usuario",err});
   }
 }
 
 async function getUsers(req, res) {
+  const id = req.params.id;
   let page = parseInt(req.query.page);
   let limit = parseInt(req.query.limit);
   if (!page) page = 1;
   if (!limit) limit = 10;
+
   try {
+  if(id){
+    let {status,user,err} = await getUser(id);
+  if(status === 200) return res.status(200).send({ok:true, msg:'Usuario obtenido con exito',user});
+  if(status === 400) return res.status(400).send({ok:false, msg:'No existe un usario con este id'});
+  if(status === 500) return res.status(500).send({ok:false, msg:'Error al obtener usuario',err})
+  }
+
     const count = await User.countDocuments();
     const users = await User
       .find({})
@@ -61,31 +70,29 @@ async function getUsers(req, res) {
       .status(200)
       .send({ ok: true, msg: "Usuarios obtenidos con exito",result,users });
   } catch (err) {
+    console.log(err)
     return res
       .status(500)
       .send({
         ok: false,
-        msg: "Se produjo un error al ontener los usuarios",
+        msg: "Se produjo un error al obtener los usuarios",
         err,
       });
   }
 }
 
-async function getUser(req, res) {
-  let id = req.params.id;
-  if(!id) return res.status(400).send({ok:false, msg:'Es necesario enviar un id'})
+
+async function getUser(id) {
 
   try{
     let user = await User.findById(id);
-    return res.status(200).send({ok:true,msg:'Usuario encontrado con exito',user});
+    return {status:200,user};
   }catch(err){
-    if(err.name === 'CastError') return res.status(500).send({ok:false, msg:'No existe un usario con este id'})
-    return res.status(500).send({ok:false, msg:'Error al obtener usuario',err})
+    if(err.name === 'CastError') return {status:400};
+    return {status:500,err};
   }
 }
-
 module.exports = {
   createUser,
   getUsers,
-  getUser,
 };

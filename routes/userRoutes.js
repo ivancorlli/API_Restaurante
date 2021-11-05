@@ -6,8 +6,7 @@ const api = express.Router();
 const userControllers = require('../controllers/userControllers')
 
 api.post('/regist', userControllers.createUser );
-api.get('/users',userControllers.getUsers)
-api.get('/user/:id',userControllers.getUser)
+api.get('/users?/:id?',userControllers.getUsers)
 
 
 module.exports = api
