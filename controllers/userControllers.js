@@ -145,7 +145,7 @@ async function newPassword(req,res){
   try{
     const hash = await encriptar(password);
     const user = await User.findByIdAndUpdate(id,{password:hash})
-    return res.send({ok:true})
+    return res.status(200).send({ok:true, msg:'Datos guardados exitosamente'})
   }catch(err){
     if(err.name === 'CastError') return res.status(400).send({ok:false, msg:'No existe el usuario'});
     return res.status(500).send({ok:false, msg:"Error al guardar los datos",err})
