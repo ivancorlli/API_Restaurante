@@ -1,5 +1,15 @@
+<<<<<<< HEAD
 const { encriptar } = require("../helpers/bcryptHelp");
 const User = require("../models/userSchema");
+=======
+const { encriptar } = require('../helpers/bcryptHelp');
+const User = require('../models/userSchema')
+var bcrypt = require('bcrypt');
+
+var salt = 10;
+var jwtHelper =require('../helpers/token')
+
+>>>>>>> 2f9fb342509fd5bb44b66e7b06e22bf94e25a796
 
 async function createUser(req, res) {
   const body = req.body;
@@ -71,6 +81,7 @@ async function getUsers(req, res) {
   }
 }
 
+<<<<<<< HEAD
 function getUser(req, res) {}
 
 module.exports = {
@@ -78,3 +89,54 @@ module.exports = {
   getUsers,
   getUser,
 };
+=======
+const loginUsuario = async (req, res) => {
+
+    const passwordText = req.body.password;
+    const emailToFind = req.body.email;
+
+    try {
+        const user = await User.findOne({
+            email: emailToFind
+        }).exec();
+        if (!user) return res.status(404).send({
+            ok: false,
+            msg: 'El usuario no fue encontrado',
+        });
+
+        const passwordDBHashed = user.password;
+        const result = await bcrypt.compare(passwordText, passwordDBHashed);
+
+        if (result) {
+            user.password = undefined;
+            const token = await jwtHelper.generateJWT(user);
+            return res.status(200).send({
+                ok: true,
+                msg: 'Login correcto',
+                user,
+                token
+            })
+        } else {
+            return res.status(401).send({
+                ok: false,
+                msg: 'Datos ingresados no son correcto.'
+            })
+        }
+
+        } catch (error) {
+            return res.status(500).send({
+                ok: false,
+                msg: 'No se pudo realizar el login',
+                error
+            })
+        }
+}
+
+
+
+
+module.exports = {
+    crearUsuario,
+    loginUsuario
+}
+>>>>>>> 2f9fb342509fd5bb44b66e7b06e22bf94e25a796
