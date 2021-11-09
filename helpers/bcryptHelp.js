@@ -10,17 +10,17 @@ async function encriptar (password){
         return {ok:false,err}
     }
 }
-// async function desencriptar (password){
-//     try{
-//         let hash = await bcrypt.compare
-//         return hash
-//     }catch(err){
-//         return {ok:false,err}
-//     }
-// }
+async function desencriptar (password,hash){
+    try{
+        let result = await bcrypt.compare(password,hash)
+        return result
+    }catch(err){
+        return {ok:false,err}
+    }
+}
 
 
 module.exports ={
     encriptar,
-    // desencriptar,
+    desencriptar,
 }

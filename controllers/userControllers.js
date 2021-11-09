@@ -1,7 +1,14 @@
+
 const { encriptar } = require("../helpers/bcryptHelp");
 const User = require('../schema/user')
 const {sendMail} = require('../helpers/emailer')
 const {verify,password} = require('../helpers/emailTemplates')
+
+var bcrypt = require('bcrypt');
+var salt = 10;
+var jwtHelper =require('../helpers/token')
+
+
 
 async function createUser(req, res) {
   const body = req.body;
@@ -85,7 +92,6 @@ async function getUsers(req, res) {
   }
 }
 
-
 async function getUser(id) {
 
   try{
@@ -96,7 +102,6 @@ async function getUser(id) {
     return {status:500,err};
   }
 }
-
 
 async function confirmUser (req,res){
   const id =req.query.value;
@@ -152,10 +157,54 @@ async function newPassword(req,res){
   }
 }
 
+const loginUsuario = async (req, res) => {
+
+    const passwordText = req.body.password;
+    const emailToFind = req.body.email;
+
+    try {
+        const user = await User.findOne({
+            email: emailToFind
+        }).exec();
+        if (!user) return res.status(404).send({
+            ok: false,
+            msg: 'El usuario no fue encontrado',
+        });
+
+        const passwordDBHashed = user.password;
+        const result = await bcrypt.compare(passwordText, passwordDBHashed);
+
+        if (result) {
+            user.password = undefined;
+            const token = await jwtHelper.generateJWT(user);
+            return res.status(200).send({
+                ok: true,
+                msg: 'Login correcto',
+                user,
+                token
+            })
+        } else {
+            return res.status(401).send({
+                ok: false,
+                msg: 'Datos ingresados no son correcto.'
+            })
+        }
+
+        } catch (error) {
+            return res.status(500).send({
+                ok: false,
+                msg: 'No se pudo realizar el login',
+                error
+            })
+        }
+}
+
 module.exports = {
   createUser,
   getUsers,
   confirmUser,
   resetPassword,
-  newPassword
+  newPassword,
+  loginUsuario
 };
+
