@@ -1,12 +1,13 @@
 
 const { encriptar } = require("../helpers/bcryptHelp");
-const User = require('../schema/user')
+const User = require('../schema/userSchema')
 const {sendMail} = require('../helpers/emailer')
 const {verify,password} = require('../helpers/emailTemplates')
+const jwt = require('jsonwebtoken')
 
 var bcrypt = require('bcrypt');
 var salt = 10;
-var jwtHelper =require('../helpers/token')
+var {createToken} =require('../helpers/token');
 
 
 
@@ -28,8 +29,12 @@ async function createUser(req, res) {
     user.password = hash;
     // Guardar usuario en bd
     await user.save();
+    let payload = {
+      id:user.id
+    }
+    let idToken = await jwt.sign(payload, process.env.CONFIRM);
     // Contenido del mail
-    let html = verify(`http://localhost:5000/api/confirm?value=${user.id}`);
+    let html = verify(`http://localhost:5000/api/confirm?value=${idToken}`);
     let emailContent = {
       from: 'foo@mail.com',
       to: user.email,
@@ -39,14 +44,16 @@ async function createUser(req, res) {
     // Enviar mail de confirmacion
     await sendMail(emailContent);
     // Respusta exitosa
-    return res.status(201).send({ ok: true, msg: "Usuario creado correctamnte" });
+    return res.status(201).send({ ok: true, msg: "Usuario creado correctamente, revise su correo" });
   } catch (err) {
+    console.log(err)
     if (err.code = 11000)return res.status(400).send({ ok: false, msg: "El correo ingresado ya esta en uso" });
     return res.status(500).send({ ok: false, msg: "Error al intentar crear el usuario",err});
   }
 }
 
 async function getUsers(req, res) {
+
   const id = req.params.id;
   let page = parseInt(req.query.page);
   let limit = parseInt(req.query.limit);
@@ -63,10 +70,16 @@ async function getUsers(req, res) {
   }
 
     const count = await User.countDocuments();
-    const users = await User
+    let usersDb = await User
       .find({})
       .skip((page - 1) * 10)
       .limit(limit);
+
+    const users = usersDb.map(user =>{
+        user.password = undefined;
+        return user
+    });
+
     let result = {
       totalPages: Math.ceil(count / limit),
       page: page,
@@ -96,6 +109,7 @@ async function getUser(id) {
 
   try{
     let user = await User.findById(id);
+    user.password = undefined;
     return {user};
   }catch(err){
     if(err.name === 'CastError') return {status:400};
@@ -104,12 +118,13 @@ async function getUser(id) {
 }
 
 async function confirmUser (req,res){
-  const id =req.query.value;
-  if(!id) return res.status(400).send({ok:false, msg:'Error al encontrar usuario'})
+  const token =req.query.value;
+  if(!token) return res.status(403).send({ok:false, msg:'No tiene autorizacion'})
   try{
+    const {id} = await jwt.verify(token, process.env.CONFIRM);
     const user = await User.findById(id);
-    if(user.status === true)return res.status(400).send({ok:false, msg:'Usuario ya confirmado'});
-      user.status = true;
+    if(user.active === true)return res.status(400).send({ok:false, msg:'Usuario ya confirmado'});
+      user.active = true;
     await user.save();
     return res.status(200).send({ok:true,msg:'Verficacion de usuario exitosa'})
   }catch(err){
@@ -174,14 +189,22 @@ const loginUsuario = async (req, res) => {
         const passwordDBHashed = user.password;
         const result = await bcrypt.compare(passwordText, passwordDBHashed);
 
+        let payload = {
+          id: user.id,
+          role: user.role,
+        }
+
         if (result) {
-            user.password = undefined;
-            const token = await jwtHelper.generateJWT(user);
+            const token = await createToken(payload)
+            res.cookie('token',token,{
+              maxAge: 20 * 60 * 1000 ,
+              httpOnly:true,
+              // secure:true,
+            });
             return res.status(200).send({
                 ok: true,
                 msg: 'Login correcto',
-                user,
-                token
+                payload
             })
         } else {
             return res.status(401).send({
@@ -199,12 +222,25 @@ const loginUsuario = async (req, res) => {
         }
 }
 
+
+
+async function addOrders (userId, order){
+  try{
+    const user = await User.findById(userId).exec();
+    user.orders.push(order)
+    await User.save()
+  }catch(err){
+
+  }
+}
+
 module.exports = {
   createUser,
   getUsers,
   confirmUser,
   resetPassword,
   newPassword,
-  loginUsuario
+  loginUsuario,
+  addOrders
 };
 

@@ -1,3 +1,4 @@
+require('dotenv').config()
 const jwt = require('jsonwebtoken');
 var SEED = 'pr0y3ct0'
 
@@ -19,7 +20,17 @@ function generateJWT (user) {
     
 }
 
+async function createToken (payload){
+    try{
+        let token = await jwt.sign(payload,process.env.SECRET,{expiresIn:900})
+        return token
+    }catch(err){
+        return err
+    }
+}
+
 
 module.exports = {
-    generateJWT
+    generateJWT,
+    createToken
 }
