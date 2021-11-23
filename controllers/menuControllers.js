@@ -25,15 +25,12 @@ async function getMenus(req,res){
 function updateMenu (req, res){
     const id = req.params.id;
     const updateData = req.body;
-    console.log(id)
-    if(req.user.role === 'ADMIN' && req.user._id !== id) {
-        return res.status(401).send ({
-            ok: false,
-            msg: 'No tiene permisos para modificar '
-        })
-    }
-
-    if(updateData.email) updateData.email = updateData.email.toLoweCase();
+    // if(req.user.role === 'ADMIN' && req.user._id !== id) {
+    //     return res.status(401).send ({
+    //         ok: false,
+    //         msg: 'No tiene permisos para modificar '
+    //     })
+    // }
 
     Menu.findByIdAndUpdate(id, updateData, {
         new: true
