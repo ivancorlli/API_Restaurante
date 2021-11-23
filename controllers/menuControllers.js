@@ -22,8 +22,64 @@ async function getMenus(req,res){
     }
 }
 
+function updateMenu (req, res){
+    const id = req.params.id;
+    const updateData = req.body;
+    console.log(id)
+    if(req.user.role === 'ADMIN' && req.user._id !== id) {
+        return res.status(401).send ({
+            ok: false,
+            msg: 'No tiene permisos para modificar '
+        })
+    }
+
+    if(updateData.email) updateData.email = updateData.email.toLoweCase();
+
+    Menu.findByIdAndUpdate(id, updateData, {
+        new: true
+    }, (error, menuUpdated) => {
+        if (error) return res.status(500).send ({
+            ok:false,
+            msg: 'no se pudo actualizar el menu',
+            error
+        })
+        if(!menuUpdated) return res.status(404).send({
+            ok:false,
+            msg: 'menu no encontrado'
+        })
+        return res.status(200).send ({
+            ok:true,
+            msg: 'menu actualizado',
+            menuUpdated
+        })
+    })
+}
+
+function deleteMenu (req,res) {
+    const id = req.params.id;
+
+    Menu.findByIdAndDelete (id, (error, menuDeleted) => {
+        if(error) return res.status(500).send ({
+            ok:false,
+            msg: 'No se pudo borrar el menu',
+            error
+        });
+        if(!menuDeleted) return res.status(404).send ({
+            ok:false,
+            msg:'menu no encontrado'
+        })
+        return res.status(200).send ({
+            ok: true,
+            msg: 'usuario borrado correctamente',
+            menuDeleted
+        })
+    })
+}
+
 
 module.exports = {
     createMenu,
     getMenus,
+    updateMenu,
+    deleteMenu
 }
