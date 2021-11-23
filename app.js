@@ -17,6 +17,7 @@ app.use(cors({
 // Rutas
 const userRouter = require('./routes/userRoutes');
 const orderRouter = require('./routes/orderRoutes');
+const menuRouter = require('./routes/menuRoutes')
 
 app.get('/',(req,res)=>{
     return res.send('Server WORKS')
@@ -25,6 +26,7 @@ app.get('/',(req,res)=>{
 app.use('/api',[
     userRouter,
     orderRouter,
+    menuRouter,
 ])
 
 module.exports =  app

@@ -8,7 +8,7 @@ function generateJWT (user) {
         jwt.sign(
             user.toJSON(),
             SEED, 
-            {expiresIn: 900},
+            {expiresIn: 1500},
             (error, token) =>{
                 if(error) {
                     reject(error);

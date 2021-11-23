@@ -55,10 +55,6 @@ async function createUser(req, res) {
 async function getUsers(req, res) {
 
   const id = req.params.id;
-  let page = parseInt(req.query.page);
-  let limit = parseInt(req.query.limit);
-  if (!page) page = 1;
-  if (!limit) limit = 10;
 
   try {
   if(id){
@@ -68,32 +64,18 @@ async function getUsers(req, res) {
     if(status === 500) return res.status(500).send({ok:false, msg:'Error al obtener usuario',err})
     return res.status(200).send({ok:true, msg:'Usuario obtenido con exito',user});
   }
-
     const count = await User.countDocuments();
     let usersDb = await User
       .find({})
-      .skip((page - 1) * 10)
-      .limit(limit);
 
     const users = usersDb.map(user =>{
         user.password = undefined;
         return user
     });
 
-    let result = {
-      totalPages: Math.ceil(count / limit),
-      page: page,
-      size: limit,
-    };
-    if (page > 1) {
-      result.previous = page - 1;
-    }
-    if (limit < count) {
-      result.next = page + 1;
-    }
     return res
       .status(200)
-      .send({ ok: true, msg: "Usuarios obtenidos con exito",result,users });
+      .send({ ok: true, msg: "Usuarios obtenidos con exito",users });
   } catch (err) {
     return res
       .status(500)
@@ -190,17 +172,20 @@ const loginUsuario = async (req, res) => {
         const result = await bcrypt.compare(passwordText, passwordDBHashed);
 
         let payload = {
-          id: user.id,
+          id:user.id,
           role: user.role,
+          active: user.active,
         }
 
         if (result) {
             const token = await createToken(payload)
             res.cookie('token',token,{
-              maxAge: 20 * 60 * 1000 ,
+              maxAge: 25 * 60 * 1000 ,
               httpOnly:true,
+              sameSite:false,
               // secure:true,
             });
+            payload.id = undefined;
             return res.status(200).send({
                 ok: true,
                 msg: 'Login correcto',
@@ -222,6 +207,18 @@ const loginUsuario = async (req, res) => {
         }
 }
 
+async function deleteUser(req,res){
+  const id = req.params.id;
+  if(!id) return res.status(400).send({ok:false, msg:'Uusario Invalido'})
+
+  try{
+    
+    await User.findByIdAndDelete(id);
+    return res.status(200).send({ok:true, msg:'Exito al borrar usuario'})
+  }catch(err){
+    return res.status(500).send({ok:false, msg:'Error interno'})
+  }
+}
 
 
 async function addOrders (userId, order){
@@ -241,6 +238,7 @@ module.exports = {
   resetPassword,
   newPassword,
   loginUsuario,
-  addOrders
+  addOrders,
+  deleteUser,
 };
 
