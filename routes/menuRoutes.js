@@ -8,7 +8,10 @@ const auth = require('../middlewares/auth')
 const menuControllers = require('../controllers/menuControllers');
 
 
-api.post('/menu',auth, menuControllers.createMenu);
-api.get('/menu',auth, menuControllers.getMenus)
+api.post('/menu', menuControllers.createMenu);
+api.get('/menu', menuControllers.getMenus)
+api.put('/menu/:id', menuControllers.updateMenu)
+api.delete('/menu/:id', menuControllers.deleteMenu)
+
 
 module.exports = api
