@@ -13,7 +13,17 @@ async function createMenu (req,res){
     }
 }
 
+async function getMenus(req,res){
+    try{
+        const menus = await Menu.find({});
+        return res.status(200).send({ok:true, msg:'Menus obtenidos exitosamente', menus})
+    }catch(err){
+        return res.status(500).send({ok:false, msg:'Error al obtener menus', err})
+    }
+}
+
 
 module.exports = {
     createMenu,
+    getMenus,
 }
